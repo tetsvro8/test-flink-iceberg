@@ -6,7 +6,9 @@ services:
     ports:
       - "8081:8081"
     environment:
-      AWS_REGION: us-east-1
+      AWS_REGION: ${AWS_REGION}
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
       FLINK_PROPERTIES: |
         jobmanager.rpc.address: jobmanager
     volumes:
@@ -21,7 +23,9 @@ services:
     image: flink-pyflink:1.20
     command: taskmanager
     environment:
-      AWS_REGION: us-east-1
+      AWS_REGION: ${AWS_REGION}
+      AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
+      AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
       FLINK_PROPERTIES: |
         jobmanager.rpc.address: jobmanager
     volumes:
@@ -38,8 +42,8 @@ services:
       - "9000:9000"
       - "9001:9001"
     environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     volumes:
       - minio-data:/data
 
@@ -47,10 +51,13 @@ services:
     image: minio/mc
     depends_on:
       - minio
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
     entrypoint: >
       /bin/sh -c "
       sleep 3;
-      mc alias set local http://minio:9000 minioadmin minioadmin;
+      mc alias set local http://minio:9000 $${MINIO_ROOT_USER} $${MINIO_ROOT_PASSWORD};
       mc mb --ignore-existing local/warehouse;
       exit 0;
       "
@@ -63,10 +70,10 @@ services:
       CATALOG_WAREHOUSE: s3://warehouse/
       CATALOG_IO__IMPL: org.apache.iceberg.aws.s3.S3FileIO
       CATALOG_S3_ENDPOINT: http://minio:9000
-      CATALOG_S3_ACCESS__KEY__ID: minioadmin
-      CATALOG_S3_SECRET__ACCESS__KEY: minioadmin
+      CATALOG_S3_ACCESS__KEY__ID: ${MINIO_ROOT_USER}
+      CATALOG_S3_SECRET__ACCESS__KEY: ${MINIO_ROOT_PASSWORD}
       CATALOG_S3_PATH__STYLE__ACCESS: "true"
-      AWS_REGION: us-east-1
+      AWS_REGION: ${AWS_REGION}
     depends_on:
       minio-init:
         condition: service_completed_successfully
