@@ -1,0 +1,75 @@
+services:
+  jobmanager:
+    build: .
+    image: flink-pyflink:1.20
+    command: jobmanager
+    ports:
+      - "8081:8081"
+    environment:
+      AWS_REGION: us-east-1
+      FLINK_PROPERTIES: |
+        jobmanager.rpc.address: jobmanager
+    volumes:
+      - ./conf/flink-conf.yaml:/opt/flink/conf/config.yaml
+      - ./lib:/opt/flink/lib/iceberg
+      - ./jobs:/opt/flink/jobs
+    depends_on:
+      minio-init:
+        condition: service_completed_successfully
+
+  taskmanager:
+    image: flink-pyflink:1.20
+    command: taskmanager
+    environment:
+      AWS_REGION: us-east-1
+      FLINK_PROPERTIES: |
+        jobmanager.rpc.address: jobmanager
+    volumes:
+      - ./conf/flink-conf.yaml:/opt/flink/conf/config.yaml
+      - ./lib:/opt/flink/lib/iceberg
+      - ./jobs:/opt/flink/jobs
+    depends_on:
+      - jobmanager
+
+  minio:
+    image: minio/minio
+    command: server /data --console-address ":9001"
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    volumes:
+      - minio-data:/data
+
+  minio-init:
+    image: minio/mc
+    depends_on:
+      - minio
+    entrypoint: >
+      /bin/sh -c "
+      sleep 3;
+      mc alias set local http://minio:9000 minioadmin minioadmin;
+      mc mb --ignore-existing local/warehouse;
+      exit 0;
+      "
+
+  iceberg-rest:
+    image: tabulario/iceberg-rest
+    ports:
+      - "8181:8181"
+    environment:
+      CATALOG_WAREHOUSE: s3://warehouse/
+      CATALOG_IO__IMPL: org.apache.iceberg.aws.s3.S3FileIO
+      CATALOG_S3_ENDPOINT: http://minio:9000
+      CATALOG_S3_ACCESS__KEY__ID: minioadmin
+      CATALOG_S3_SECRET__ACCESS__KEY: minioadmin
+      CATALOG_S3_PATH__STYLE__ACCESS: "true"
+      AWS_REGION: us-east-1
+    depends_on:
+      minio-init:
+        condition: service_completed_successfully
+
+volumes:
+  minio-data:
