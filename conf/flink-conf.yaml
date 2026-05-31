@@ -1,0 +1,28 @@
+s3:
+  access-key: minioadmin
+  secret-key: minioadmin
+  endpoint: http://minio:9000
+  path:
+    style:
+      access: 'true'
+blob:
+  server:
+    port: '6124'
+taskmanager:
+  memory:
+    process:
+      size: 1728m
+  numberOfTaskSlots: 2
+classloader:
+  resolve-order: parent-first
+parallelism:
+  default: 1
+jobmanager:
+  rpc:
+    address: jobmanager
+  memory:
+    process:
+      size: 1600m
+query:
+  server:
+    port: '6125'
