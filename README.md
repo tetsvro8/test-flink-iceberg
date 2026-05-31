@@ -23,11 +23,13 @@ Python Producer (faker) → Kafka → PyFlink → Iceberg → MinIO
 
 ### 1. 認証情報の設定
 
-```bash
-cp .env.example .env
-```
+`.env` ファイルをプロジェクトルートに作成し、以下の内容を設定する。
 
-`.env` を編集してMinIOの認証情報を設定する。
+```
+MINIO_ROOT_USER=your_access_key
+MINIO_ROOT_PASSWORD=your_secret_key
+AWS_REGION=us-east-1
+```
 
 ### 2. JARのダウンロード（初回のみ）
 
