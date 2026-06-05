@@ -71,8 +71,10 @@ LIMIT 10;
 
 ### Trino からパーティション一覧を取得
 
+`$partitions` の `partition` カラムは ROW 型で、フィールド名を `.` でアクセスする。
+
 ```sql
-SELECT "$partition_id", record_count
+SELECT partition.event_hour, record_count, file_count, total_size
 FROM "iceberg"."db"."order_events_partitioned$partitions";
 ```
 
