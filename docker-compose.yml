@@ -26,6 +26,7 @@ services:
 
   taskmanager:
     image: flink-pyflink:1.20
+    pull_policy: never
     command: taskmanager
     environment:
       AWS_REGION: ${AWS_REGION}
