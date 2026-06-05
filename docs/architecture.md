@@ -27,4 +27,4 @@ Python Producer (faker) → Kafka → PyFlink → Iceberg → MinIO
 | Apache Iceberg | テーブルフォーマット | 1.9.0 |
 | Iceberg REST Catalog | カタログサービス | tabulario/iceberg-rest |
 | MinIO | S3互換オブジェクトストレージ | latest |
-| Apache Kafka | メッセージキュー | bitnami/kafka:3.9 (KRaft) |
+| Apache Kafka | メッセージキュー | apache/kafka:3.9.0 (KRaft) |
