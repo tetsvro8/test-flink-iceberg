@@ -110,9 +110,31 @@ services:
       CATALOG_S3_SECRET__ACCESS__KEY: ${MINIO_ROOT_PASSWORD}
       CATALOG_S3_PATH__STYLE__ACCESS: "true"
       AWS_REGION: ${AWS_REGION}
+      CATALOG_URI: jdbc:sqlite:/catalog/iceberg.db
+    user: "0:0"
+    volumes:
+      - iceberg-catalog:/catalog
     depends_on:
       minio-init:
         condition: service_completed_successfully
 
+  trino:
+    image: trinodb/trino:latest
+    ports:
+      - "8082:8080"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      AWS_REGION: ${AWS_REGION}
+    volumes:
+      - ./trino/entrypoint.sh:/usr/local/bin/trino-entrypoint.sh
+    entrypoint: ["/bin/bash", "/usr/local/bin/trino-entrypoint.sh"]
+    depends_on:
+      minio-init:
+        condition: service_completed_successfully
+      iceberg-rest:
+        condition: service_started
+
 volumes:
   minio-data:
+  iceberg-catalog:

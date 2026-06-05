@@ -59,6 +59,7 @@ docker compose up -d
 | MinIO UI | http://localhost:9001 |
 | Iceberg REST Catalog | http://localhost:8181 |
 | Kafka (外部) | localhost:9094 |
+| Trino UI | http://localhost:8082 |
 
 ## ジョブの実行
 
@@ -78,10 +79,26 @@ docker exec test-flink-iceberg-jobmanager-1 \
 
 Producer コンテナは `docker compose up -d` 時に自動起動し、Kafka へのイベント送信を開始する。
 
+## データのクエリ（Trino）
+
+Flink ジョブ投入後、Trino CLI で SQL クエリが実行できる。
+
+```bash
+docker exec -it test-flink-iceberg-trino-1 trino
+```
+
+```sql
+SELECT COUNT(*) FROM iceberg.db.order_events;
+SELECT order_id, user_id, amount, event_time FROM iceberg.db.order_events LIMIT 10;
+```
+
+詳細は [docs/trino-query.md](docs/trino-query.md) を参照。
+
 ## 動作確認
 
 1. **Flink UI** (http://localhost:8081) でジョブが `RUNNING` になっていることを確認
 2. **MinIO UI** (http://localhost:9001) で `warehouse/db/order_events/data/` にParquetファイルが生成されていることを確認（10秒ごとに追加される）
+3. **Trino UI** (http://localhost:8082) でクエリ履歴を確認
 
 ## 停止
 
