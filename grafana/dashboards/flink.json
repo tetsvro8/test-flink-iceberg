@@ -1,0 +1,105 @@
+{
+  "title": "Flink Metrics",
+  "uid": "flink-metrics",
+  "schemaVersion": 38,
+  "refresh": "10s",
+  "time": { "from": "now-15m", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Records In Per Second",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "sum(rate(flink_taskmanager_job_task_operator_numRecordsIn[1m]))",
+          "legendFormat": "records/s"
+        }
+      ]
+    },
+    {
+      "id": 2,
+      "title": "Records Out Per Second",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 0, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "sum(rate(flink_taskmanager_job_task_operator_numRecordsOut[1m]))",
+          "legendFormat": "records/s"
+        }
+      ]
+    },
+    {
+      "id": 3,
+      "title": "Last Checkpoint Duration (ms)",
+      "type": "timeseries",
+      "gridPos": { "x": 0, "y": 8, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "flink_jobmanager_job_lastCheckpointDuration",
+          "legendFormat": "duration ms"
+        }
+      ]
+    },
+    {
+      "id": 4,
+      "title": "JVM CPU Load (%)",
+      "type": "timeseries",
+      "gridPos": { "x": 12, "y": 8, "w": 12, "h": 8 },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "flink_jobmanager_Status_JVM_CPU_Load * 100",
+          "legendFormat": "jobmanager"
+        },
+        {
+          "datasource": "Prometheus",
+          "expr": "flink_taskmanager_Status_JVM_CPU_Load * 100",
+          "legendFormat": "taskmanager"
+        }
+      ]
+    },
+    {
+      "id": 5,
+      "title": "Job Uptime (s)",
+      "type": "stat",
+      "gridPos": { "x": 0, "y": 16, "w": 8, "h": 4 },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "flink_jobmanager_job_uptime / 1000",
+          "legendFormat": "uptime"
+        }
+      ]
+    },
+    {
+      "id": 6,
+      "title": "Number of Completed Checkpoints",
+      "type": "stat",
+      "gridPos": { "x": 8, "y": 16, "w": 8, "h": 4 },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "flink_jobmanager_job_numberOfCompletedCheckpoints",
+          "legendFormat": "completed"
+        }
+      ]
+    },
+    {
+      "id": 7,
+      "title": "Last Checkpoint Size (bytes)",
+      "type": "stat",
+      "gridPos": { "x": 16, "y": 16, "w": 8, "h": 4 },
+      "targets": [
+        {
+          "datasource": "Prometheus",
+          "expr": "flink_jobmanager_job_lastCheckpointSize",
+          "legendFormat": "bytes"
+        }
+      ]
+    }
+  ]
+}

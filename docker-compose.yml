@@ -5,12 +5,15 @@ services:
     command: jobmanager
     ports:
       - "8081:8081"
+      - "9249:9249"
     environment:
       AWS_REGION: ${AWS_REGION}
       AWS_ACCESS_KEY_ID: ${MINIO_ROOT_USER}
       AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
       FLINK_PROPERTIES: |
         jobmanager.rpc.address: jobmanager
+        metrics.reporter.prom.factory.class: org.apache.flink.metrics.prometheus.PrometheusReporterFactory
+        metrics.reporter.prom.port: 9249
     volumes:
       - ./conf/flink-conf.yaml:/opt/flink/conf/config.yaml
       - ./lib:/opt/flink/lib/iceberg
@@ -23,6 +26,7 @@ services:
 
   taskmanager:
     image: flink-pyflink:1.20
+    pull_policy: never
     command: taskmanager
     environment:
       AWS_REGION: ${AWS_REGION}
@@ -30,12 +34,37 @@ services:
       AWS_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD}
       FLINK_PROPERTIES: |
         jobmanager.rpc.address: jobmanager
+        metrics.reporter.prom.factory.class: org.apache.flink.metrics.prometheus.PrometheusReporterFactory
+        metrics.reporter.prom.port: 9249
     volumes:
       - ./conf/flink-conf.yaml:/opt/flink/conf/config.yaml
       - ./lib:/opt/flink/lib/iceberg
       - ./jobs:/opt/flink/jobs
     depends_on:
       - jobmanager
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+    depends_on:
+      - jobmanager
+      - taskmanager
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning
+      - ./grafana/dashboards:/var/lib/grafana/dashboards
+      - grafana-data:/var/lib/grafana
+    depends_on:
+      - prometheus
 
   kafka:
     image: apache/kafka:3.9.0
@@ -138,3 +167,4 @@ services:
 volumes:
   minio-data:
   iceberg-catalog:
+  grafana-data:
