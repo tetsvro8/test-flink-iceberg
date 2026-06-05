@@ -12,7 +12,7 @@ Flink DataGen → PyFlink → Iceberg REST Catalog → MinIO
 ```
 成功基準: MinIO UI (`warehouse/db/order_events/data/`) にParquetファイルが生成されること
 
-### Phase 2（予定）
+### Phase 2（完了）
 ```
 Python Producer (faker) → Kafka → PyFlink → Iceberg → MinIO
 ```
@@ -27,4 +27,4 @@ Python Producer (faker) → Kafka → PyFlink → Iceberg → MinIO
 | Apache Iceberg | テーブルフォーマット | 1.9.0 |
 | Iceberg REST Catalog | カタログサービス | tabulario/iceberg-rest |
 | MinIO | S3互換オブジェクトストレージ | latest |
-| Apache Kafka | メッセージキュー（Phase 2） | - |
+| Apache Kafka | メッセージキュー | bitnami/kafka:3.9 (KRaft) |

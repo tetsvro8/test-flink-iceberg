@@ -7,10 +7,10 @@ ECサイト注文イベント（order_id, user_id, product_id, amount, event_tim
 ## アーキテクチャ
 
 ```
-Phase 1（現在）:
+Phase 1（完了）:
 Flink DataGen → PyFlink (Table API) → Iceberg REST Catalog → MinIO
 
-Phase 2（予定）:
+Phase 2（完了）:
 Python Producer (faker) → Kafka → PyFlink → Iceberg → MinIO
 ```
 
@@ -37,7 +37,7 @@ AWS_REGION=us-east-1
 bash download-libs.sh
 ```
 
-Iceberg / Hadoop の依存JARを `lib/` に取得する（約95MB）。
+Iceberg / Hadoop / Kafka コネクタの依存JARを `lib/` に取得する。
 
 ### 3. Dockerイメージのビルド（初回のみ）
 
@@ -45,7 +45,7 @@ Iceberg / Hadoop の依存JARを `lib/` に取得する（約95MB）。
 docker compose build
 ```
 
-PyFlink入りのカスタムFlinkイメージをビルドする（数分）。
+PyFlink入りのカスタムFlinkイメージと Python Producerイメージをビルドする（数分）。
 
 ### 4. 起動
 
@@ -58,13 +58,25 @@ docker compose up -d
 | Flink UI | http://localhost:8081 |
 | MinIO UI | http://localhost:9001 |
 | Iceberg REST Catalog | http://localhost:8181 |
+| Kafka (外部) | localhost:9094 |
 
 ## ジョブの実行
+
+### Phase 1: DataGen → Iceberg
 
 ```bash
 docker exec test-flink-iceberg-jobmanager-1 \
   /opt/flink/bin/flink run -py /opt/flink/jobs/order_events_job.py
 ```
+
+### Phase 2: Kafka → Iceberg
+
+```bash
+docker exec test-flink-iceberg-jobmanager-1 \
+  /opt/flink/bin/flink run -py /opt/flink/jobs/order_events_kafka_job.py
+```
+
+Producer コンテナは `docker compose up -d` 時に自動起動し、Kafka へのイベント送信を開始する。
 
 ## 動作確認
 

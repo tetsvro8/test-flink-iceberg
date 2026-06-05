@@ -18,6 +18,8 @@ services:
     depends_on:
       minio-init:
         condition: service_completed_successfully
+      kafka-init:
+        condition: service_completed_successfully
 
   taskmanager:
     image: flink-pyflink:1.20
@@ -34,6 +36,38 @@ services:
       - ./jobs:/opt/flink/jobs
     depends_on:
       - jobmanager
+
+  kafka:
+    image: bitnami/kafka:3.9
+    ports:
+      - "9094:9094"
+    environment:
+      KAFKA_CFG_NODE_ID: 0
+      KAFKA_CFG_PROCESS_ROLES: controller,broker
+      KAFKA_CFG_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093,EXTERNAL://:9094
+      KAFKA_CFG_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092,EXTERNAL://localhost:9094
+      KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT,EXTERNAL:PLAINTEXT
+      KAFKA_CFG_CONTROLLER_QUORUM_VOTERS: 0@kafka:9093
+      KAFKA_CFG_CONTROLLER_LISTENER_NAMES: CONTROLLER
+
+  kafka-init:
+    image: bitnami/kafka:3.9
+    depends_on:
+      - kafka
+    entrypoint: >
+      /bin/sh -c "
+      sleep 5;
+      kafka-topics.sh --bootstrap-server kafka:9092 --create --if-not-exists --topic order_events --partitions 1 --replication-factor 1;
+      exit 0;
+      "
+
+  producer:
+    build: ./producer
+    depends_on:
+      kafka-init:
+        condition: service_completed_successfully
+    environment:
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
 
   minio:
     image: minio/minio
