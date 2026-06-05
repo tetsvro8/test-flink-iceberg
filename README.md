@@ -60,6 +60,8 @@ docker compose up -d
 | Iceberg REST Catalog | http://localhost:8181 |
 | Kafka (外部) | localhost:9094 |
 | Trino UI | http://localhost:8082 |
+| Prometheus | http://localhost:9090 |
+| Grafana | http://localhost:3000 (admin/admin) |
 
 ## ジョブの実行
 
