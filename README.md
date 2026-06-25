@@ -1,8 +1,37 @@
-# test-flink-iceberg
+# streaming-lakehouse
 
-PyFlink + Apache Iceberg のローカル統合環境。
+Kafka + Apache Flink + Apache Iceberg によるストリーミングレイクハウスのローカル検証環境。
 
-ECサイト注文イベント（order_id, user_id, product_id, amount, event_time）をストリーミング処理し、Icebergテーブルに書き込む。
+ECサイトの注文イベント（order_id, user_id, product_id, amount, event_time）をリアルタイムにストリーミング処理し、Icebergテーブルへ書き込む一連のパイプラインを、Docker Compose上で再現する。
+
+> **このプロジェクトの目的**
+> Netflixの大規模ストリーミングデータ基盤（Keystone）を参考に、ストリーミングレイクハウスの中核要素（メッセージング・ストリーム処理・テーブルフォーマット・クエリ・監視）を自分の手で組み上げ、設計上の論点を検証することを目的とした学習・検証用プロジェクト。
+
+## 設計意図
+
+このリポジトリは「動かすこと」自体より、ストリーミング基盤を構成する各レイヤーの役割と設計判断を理解することを主眼としている。
+
+- **なぜ Flink + Iceberg + Kafka か**
+  ストリーム処理（Flink）、ストリーミングに対応したテーブルフォーマット（Iceberg）、メッセージング（Kafka）という、Netflix Keystoneをはじめとする大規模配信基盤で採用される構成を、最小構成で再現するため。バッチ処理中心のデータ基盤経験から、ストリーミング／分散処理へ理解を広げることを意図している。
+- **段階的な構築**
+  まず Flink DataGen → Iceberg で書き込み経路を確立し（Phase 1）、次に Kafka を挟んで実運用に近いイベント駆動の構成へ拡張した（Phase 2）。レイヤーを一度に積まず、各段階で挙動を確認しながら進めることを意識した。
+- **クエリと監視まで含める**
+  Trino による分析クエリ、Prometheus / Grafana によるメトリクス監視まで含め、「データを流す」だけでなく「流れているデータを観測・検証できる」状態を一通り揃えた。
+
+## 設計上の論点と今後の発展
+
+ローカル検証環境のため本番分散環境の課題には踏み込めていないが、各論点の所在は意識して構築している。
+
+### 検証の過程で意識した論点
+
+- **Exactly-once セマンティクス**：Flinkのチェックポイントと Iceberg のコミットを跨いだ厳密一度の保証。ストリーミングからテーブルフォーマットへの書き込みで重複・欠損をどう防ぐかという観点。
+- **遅延データ・順序保証**：イベントタイムでのウォーターマーク設計と、遅れて到着するイベントの扱い。処理時刻ではなくイベント時刻を基準にする際の論点。
+
+### 今後の発展方向（未着手）
+
+- **スケールと障害耐性**：単一ノード構成から、パーティショニング・並列度・障害復旧を前提とした構成への発展。
+- **GCP上への展開**：ローカルMinIOからクラウドストレージ／マネージド構成への移行。
+- **Go によるコンポーネント実装**：Producer や周辺ツールを Go で書き換え、プラットフォーム側の実装力を広げる。
 
 ## アーキテクチャ
 
@@ -11,8 +40,20 @@ Phase 1（完了）:
 Flink DataGen → PyFlink (Table API) → Iceberg REST Catalog → MinIO
 
 Phase 2（完了）:
-Python Producer (faker) → Kafka → PyFlink → Iceberg → MinIO
+Python Producer (faker) → Kafka → PyFlink → Iceberg → MinIO → Trino（クエリ） / Prometheus・Grafana（監視）
 ```
+
+## 技術スタック
+
+| レイヤー | 採用技術 |
+|---|---|
+| メッセージング | Apache Kafka |
+| ストリーム処理 | Apache Flink (PyFlink / Table API) |
+| テーブルフォーマット | Apache Iceberg (REST Catalog) |
+| オブジェクトストレージ | MinIO (S3互換) |
+| クエリエンジン | Trino |
+| 監視 | Prometheus / Grafana |
+| 実行環境 | Docker Compose |
 
 ## 前提条件
 
@@ -68,14 +109,14 @@ docker compose up -d
 ### Phase 1: DataGen → Iceberg
 
 ```bash
-docker exec test-flink-iceberg-jobmanager-1 \
+docker exec streaming-lakehouse-jobmanager-1 \
   /opt/flink/bin/flink run -py /opt/flink/jobs/order_events_job.py
 ```
 
 ### Phase 2: Kafka → Iceberg
 
 ```bash
-docker exec test-flink-iceberg-jobmanager-1 \
+docker exec streaming-lakehouse-jobmanager-1 \
   /opt/flink/bin/flink run -py /opt/flink/jobs/order_events_kafka_job.py
 ```
 
@@ -86,7 +127,7 @@ Producer コンテナは `docker compose up -d` 時に自動起動し、Kafka �
 Flink ジョブ投入後、Trino CLI で SQL クエリが実行できる。
 
 ```bash
-docker exec -it test-flink-iceberg-trino-1 trino
+docker exec -it streaming-lakehouse-trino-1 trino
 ```
 
 ```sql
